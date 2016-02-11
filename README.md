@@ -28,11 +28,12 @@ To load/save a settings class:
 '''c#
 public static void Main() {
 
-    // Initial save
+    // Saving a settings file without loading one first.
     MySettings settings = new MySettings();
+    settings.IntSetting = 70;
     settings.SaveAs("LocalSettingsFile.xml");
     
-    // To load and save
+    // Loading a settings file and saving to the same file.
     MySettings settings = MySettings.Load("LocalSettingsFile.xml");
     settings.IntSettings = 100;
     settings.Save();
@@ -42,4 +43,9 @@ public static void Main() {
 # Licenses
 
 - [Settings Manager](LICENSE.md)
-- [JSON.NET](
+- [JSON.NET](Third party licenses/JSON.NET License.md)
+
+# About
+
+This project was created by Daniel Molenaar
+- [Website](http://daniel-molenaar.com/)
