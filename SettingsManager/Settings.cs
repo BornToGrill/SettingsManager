@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using System;
+using System.Xml.Serialization;
 
 namespace SettingsManager {
 
@@ -6,6 +7,7 @@ namespace SettingsManager {
     /// Provides methods for loading and saving settings files. This class is abstract.
     /// </summary>
     /// <typeparam name="T">The <see cref="T"/> passed to the derived class.</typeparam>
+    [Serializable]
     public abstract class Settings<T> { 
 
         /// <summary>

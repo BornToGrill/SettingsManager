@@ -13,7 +13,7 @@ namespace SettingsManager {
     /// <example>
     /// Notably all properties that should be saved are to be public.
     /// <code>
-    /// class SettingsClass : XmlSettings&lt;SettingsClass&gt; {
+    /// public class SettingsClass : XmlSettings&lt;SettingsClass&gt; {
     ///     public int IntegerSetting = 15;
     ///     public int StringSetting = { get; set; }
     /// }
@@ -26,6 +26,12 @@ namespace SettingsManager {
         /// </summary>
         [XmlIgnore]
         public const string Extension = ".xml";
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to omit the extension when saving to a settings file.
+        /// </summary>
+        [XmlIgnore]
+        public bool OmitExtension { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the settings file should not contain xmlns namespaces.
@@ -62,7 +68,12 @@ namespace SettingsManager {
                 throw new ArgumentNullException(nameof(path));
 
             string xmlPath = FixPathExtension(path);
+            bool omitExtension = false;
 
+            if (!File.Exists(xmlPath)) {
+                xmlPath = path;
+                omitExtension = true;
+            }
             if (!File.Exists(xmlPath))
                 throw new FileNotFoundException(string.Format(Resources.SettingsExceptionStrings.SettingsNotFound, xmlPath), xmlPath);
 
@@ -75,6 +86,7 @@ namespace SettingsManager {
                     if (encoding != null)
                         instance.XmlWriterSettings.Encoding = encoding;
                     instance.SavePath = xmlPath;
+                    instance.OmitExtension = omitExtension;
                     return instance;
                 }
             }
@@ -97,6 +109,14 @@ namespace SettingsManager {
             if (SavePath == null)
                 throw new NullReferenceException(Resources.SettingsExceptionStrings.SaveWithoutLoad);
             SaveAs(SavePath, false);
+        }
+
+        /// <summary>
+        /// Serializes the specified <see cref="T"/> object and saves it to the file it was loaded from.
+        /// </summary>
+        /// <param name="obj">The object to be serialized and saved.</param>
+        public static void Save(T obj) {
+            obj.Save();
         }
 
         /// <summary>
@@ -127,10 +147,19 @@ namespace SettingsManager {
                     serializer.Serialize(writer, this, namespaces);
                 }
             }
+
             if (overrideInstance)
                 SavePath = xmlPath;
         }
 
+        /// <summary>
+        /// Saves a <see cref="XmlSettings{T}"/> object to the specified path.
+        /// </summary>
+        /// <param name="obj"><see cref="T"/> object to be serialized and saved.</param>
+        /// <param name="savePath">Path that the settings should be saved to.</param>
+        public static void SaveAs(T obj, string savePath) {
+            obj.SaveAs(savePath);
+        }
         #endregion
         #region Private Methods
 

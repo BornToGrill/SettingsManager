@@ -1,44 +1,46 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
+using System.Runtime.Serialization.Formatters;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SettingsManager {
     /// <summary>
-    /// Provides methods for loading and saving Json based settings files. This class is abstract.
+    /// Provides methods for loading and saving binary based settings files. This class is abstract.
     /// </summary>
     /// <typeparam name="T">The class that is inheriting this class.</typeparam>
     /// <example>
-    /// Notably all properties that should be saved are to be public.
+    /// Notably all properties that should be saved are to be public and the settings class should be marked as Serializable.
     /// <code>
-    /// public class SettingsClass : JsonSettings&lt;SettingsClass&gt; {
+    /// [Serializable]
+    /// public class SettingsClass : BinarySettings&lt;SettingsClass&gt; {
     ///     public int IntegerSetting = 15;
     ///     public int StringSetting { get; set; }
     /// }
     /// </code>
     /// </example>
-    public abstract class JsonSettings<T> : Settings<T> where T : JsonSettings<T>, new() {
+    [Serializable]
+    public abstract class BinarySettings<T> : Settings<T> where T : BinarySettings<T>, new() {
 
         /// <summary>
-        /// Represents the extension that will be used when loading and saving json settings. This field is constant.
+        /// Represents the extension that will be used when loading and saving binary settings. This field is constant.
         /// </summary>
-        [JsonIgnore]
-        public const string Extension = ".json";
+        [NonSerialized]
+        public const string Extension = ".dat";
 
         /// <summary>
         /// Gets or sets a value indicating whether to omit the extension when saving to a settings file.
         /// </summary>
-        [JsonIgnore]
         public bool OmitExtension { get; set; }
 
         /// <summary>
-        /// Gets a value indicating what the file path of the currently loaded <see cref="JsonSettings{T}"/> is.
+        /// Gets a value indicating what the file path of the currently loaded <see cref="BinarySettings{T}"/> is.
         /// </summary>
-        [JsonIgnore]
         public sealed override string SavePath { get; internal set; }
+
 
         #region Public Methods
         /// <summary>
-        /// Loads a json settings file using the specified path.
+        /// Loads a binary settings file using the specified path.
         /// </summary>
         /// <param name="path">The relative or absolute path to the settings file.</param>
         /// <returns>Returns a new instance of the class <see cref="T"/> with variables loaded from the settings file.</returns>
@@ -46,28 +48,29 @@ namespace SettingsManager {
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
 
-            string jsonPath = FixPathExtension(path);
+            string binaryPath = FixPathExtension(path);
             bool omitExtension = false;
-
-            if (!File.Exists(jsonPath)) {
-                jsonPath = path;
+            if (!File.Exists(binaryPath)) {
+                binaryPath = path;
                 omitExtension = true;
             }
-            if (!File.Exists(jsonPath))
-                throw new FileNotFoundException(string.Format(Resources.SettingsExceptionStrings.SettingsNotFound, jsonPath), jsonPath);
+            if (!File.Exists(binaryPath))
+                throw new FileNotFoundException(string.Format(Resources.SettingsExceptionStrings.SettingsNotFound, binaryPath), binaryPath);
 
-            using (FileStream stream = new FileStream(jsonPath, FileMode.Open))
-                using (StreamReader reader = new StreamReader(stream))
-                    using (JsonTextReader json = new JsonTextReader(reader)) {
-                        T instance = new JsonSerializer().Deserialize<T>(json);
-                        instance.SavePath = jsonPath;
-                        instance.OmitExtension = omitExtension;
-                        return instance;
-                    }
+            using (FileStream stream = new FileStream(binaryPath, FileMode.Open)) {
+                BinaryFormatter format = new BinaryFormatter() {
+                    AssemblyFormat = FormatterAssemblyStyle.Simple
+                };
+
+                T instance = (T)format.Deserialize(stream);
+                instance.SavePath = binaryPath;
+                instance.OmitExtension = omitExtension;
+                return instance;
+            }
         }
 
         /// <summary>
-        /// Reloads the json settings file by returning a new instance.
+        /// Reloads the binary settings file by returning a new instance.
         /// </summary>
         /// <returns>Returns a new instance of the class <see cref="T"/> with variables loaded from the settings file.</returns>
         public override T Reload() {
@@ -102,13 +105,17 @@ namespace SettingsManager {
             if (savePath == null)
                 throw new ArgumentNullException(nameof(savePath));
 
-            string jsonPath = OmitExtension ? SavePath : FixPathExtension(savePath);
+            string binaryPath = OmitExtension ? savePath : FixPathExtension(savePath);
 
-            using (StreamWriter writer = new StreamWriter(jsonPath))
-                new JsonSerializer().Serialize(writer, this);
+            using (FileStream stream = new FileStream(binaryPath, FileMode.Create)) {
+                BinaryFormatter formatter = new BinaryFormatter() {
+                    AssemblyFormat = FormatterAssemblyStyle.Simple
+                };
+                formatter.Serialize(stream, this);
+            }
 
             if (overrideInstance)
-                SavePath = jsonPath;
+                SavePath = binaryPath;
         }
 
         /// <summary>

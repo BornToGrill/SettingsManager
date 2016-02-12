@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinarySettings.cs" />
     <Compile Include="JsonSettings.cs" />
     <Compile Include="Resources\SerializationExceptionStrings.Designer.cs">
       <AutoGen>True</AutoGen>
