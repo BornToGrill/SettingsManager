@@ -42,7 +42,7 @@ settings.Save();
 # Licenses
 
 - [Settings Manager](LICENSE.md)
-- [JSON.NET](Third party licenses/JSON.NET License.md)
+- [JSON.NET](Third party licenses/JSON.NET.md)
 
 # About
 
